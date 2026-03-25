@@ -1,0 +1,113 @@
+/* ============================================================
+   FANG — Design Tokens
+   ============================================================ */
+
+/* ---------- Dark theme (default) ---------- */
+:root,
+[data-theme="dark"] {
+  /* Colors (match src/utils/colors.js) */
+  --c-bg:              #0a0a0f;
+  --c-card:            #12121a;
+  --c-card-hover:      #1a1a25;
+  --c-border:          #1e1e2e;
+  --c-border-subtle:   #1e1e2e36;  /* border at ~22% opacity */
+  --c-accent:          #6ee7b7;
+  --c-accent-dim:      #6ee7b740;
+  --c-accent-subtle:   #6ee7b728;  /* accent at ~25% opacity (was accent + "40") */
+  --c-red:             #f87171;
+  --c-red-dim:         #f8717130;
+  --c-red-subtle:      #f8717118;  /* red at ~10% opacity (was red + "30") */
+  --c-red-medium:      #f8717160;  /* red at ~38% opacity (was red + "60") */
+  --c-yellow:          #fbbf24;
+  --c-blue:            #60a5fa;
+  --c-purple:          #a78bfa;
+  --c-text:            #e2e8f0;
+  --c-text-dim:        #64748b;
+  --c-text-muted:      #475569;
+  --c-hero-gradient:   #1a1a2e;   /* hero card gradient end stop */
+}
+
+/* ---------- Light theme ---------- */
+[data-theme="light"] {
+  --c-bg:              #f0f2f8;
+  --c-card:            #ffffff;
+  --c-card-hover:      #f5f7fc;
+  --c-border:          #dde1f0;
+  --c-border-subtle:   #dde1f036;
+  --c-accent:          #0d9e6e;
+  --c-accent-dim:      #0d9e6e28;
+  --c-accent-subtle:   #0d9e6e18;
+  --c-red:             #d63b50;
+  --c-red-dim:         #d63b5020;
+  --c-red-subtle:      #d63b5012;
+  --c-red-medium:      #d63b5060;
+  --c-yellow:          #c87c00;
+  --c-blue:            #2563eb;
+  --c-purple:          #6d4ed8;
+  --c-text:            #1a1d2e;
+  --c-text-dim:        #5a6080;
+  --c-text-muted:      #9aa0b8;
+  --c-hero-gradient:   #e8ecf8;   /* hero card gradient end stop */
+}
+
+:root {
+
+  /* Spacing */
+  --space-xs:  4px;
+  --space-sm:  8px;
+  --space-md:  12px;
+  --space-lg:  16px;
+  --space-xl:  20px;
+  --space-2xl: 24px;
+
+  /* Typography */
+  --font-body: 'DM Sans', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --text-xs:   clamp(10px, 2.5vw, 11px);
+  --text-sm:   clamp(11px, 2.8vw, 13px);
+  --text-base: clamp(13px, 3.2vw, 14px);
+  --text-md:   clamp(14px, 3.5vw, 16px);
+  --text-lg:   clamp(16px, 4vw,   18px);
+  --text-xl:   clamp(20px, 5vw,   24px);
+  --text-2xl:  clamp(24px, 6vw,   28px);
+  --text-3xl:  clamp(28px, 7.5vw, 32px);
+
+  /* Layout */
+  --app-max-width:  480px;
+  --bottom-nav-h:   64px;      /* fixed nav height */
+  --header-h:       56px;
+  --sidebar-w:      220px;
+
+  /* Radius */
+  --radius-sm:  8px;
+  --radius-md:  12px;
+  --radius-lg:  16px;
+
+  /* Touch targets */
+  --tap-min:    44px;
+
+  /* Z-index */
+  --z-nav:      100;
+  --z-modal:    1000;
+}
+
+/* Breakpoint reference (JS-free; use in media queries)
+   mobile  : < 768px   (base)
+   tablet  : >= 768px
+   desktop : >= 1024px
+*/
+
+/* Desktop: override text scale for larger sizes */
+@media (min-width: 1024px) {
+  :root {
+    --text-xs:   11px;
+    --text-sm:   13px;
+    --text-base: 15px;
+    --text-md:   16px;
+    --text-lg:   18px;
+    --text-xl:   22px;
+    --text-2xl:  28px;
+    --text-3xl:  34px;
+  }
+}

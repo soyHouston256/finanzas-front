@@ -1,0 +1,571 @@
+/* ============================================================
+   FANG — Global Styles & Responsive Base
+   ============================================================ */
+@import "./theme.css";
+
+/* ---------- Box-model reset ---------- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ---------- Root / body ---------- */
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  background: var(--c-bg);
+  color: var(--c-text);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  min-height: 100dvh;          /* dynamic viewport on mobile */
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* ---------- App shell ---------- */
+.app-shell {
+  width: 100%;
+  max-width: var(--app-max-width);
+  margin-inline: auto;
+  padding-bottom: var(--bottom-nav-h);
+  min-height: 100dvh;
+}
+
+/* Tablet: wider, centered */
+@media (min-width: 768px) {
+  .app-shell {
+    max-width: 900px;
+  }
+}
+
+/* Desktop: full layout — sidebar + main content side by side */
+@media (min-width: 1024px) {
+  .app-shell {
+    max-width: 1280px;
+    display: grid;
+    grid-template-columns: var(--sidebar-w) 1fr;
+    grid-template-rows: auto 1fr;
+    /* header spans full width; sidebar and main below it */
+    grid-template-areas:
+      "sidebar header"
+      "sidebar main";
+    padding-bottom: 0;
+    align-items: start;
+  }
+}
+
+/* ---------- App header ---------- */
+.app-header {
+  padding: var(--space-xl) var(--space-lg) var(--space-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+@media (min-width: 1024px) {
+  .app-header {
+    grid-area: header;
+    padding: var(--space-2xl) var(--space-2xl) var(--space-lg);
+    border-bottom: 1px solid var(--c-border);
+  }
+}
+
+/* ---------- Main content wrapper ---------- */
+.main-content {
+  /* mobile/tablet: natural flow */
+}
+
+@media (min-width: 1024px) {
+  .main-content {
+    grid-area: main;
+    min-height: calc(100dvh - 80px);
+    overflow-y: auto;
+    padding: var(--space-2xl) var(--space-2xl) var(--space-2xl);
+  }
+}
+
+/* ---------- Tab bar (mobile/tablet only) ---------- */
+.tab-bar {
+  display: flex;
+  gap: var(--space-xs);
+  padding: 0 var(--space-lg);
+  margin-bottom: var(--space-lg);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.tab-bar::-webkit-scrollbar { display: none; }
+
+.tab-bar__btn {
+  flex: 1;
+  min-width: 72px;
+  padding: var(--space-sm) 0;
+  border-radius: var(--radius-sm);
+  border: none;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+/* Hide tab bar on desktop (sidebar nav takes over) */
+@media (min-width: 1024px) {
+  .tab-bar {
+    display: none;
+  }
+}
+
+/* ---------- Sidebar nav (desktop only) ---------- */
+.sidebar-nav {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .sidebar-nav {
+    grid-area: sidebar;
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100dvh;
+    width: var(--sidebar-w);
+    background: var(--c-card);
+    border-right: 1px solid var(--c-border);
+    padding: var(--space-2xl) var(--space-md);
+    gap: var(--space-xs);
+    z-index: var(--z-nav);
+    overflow-y: auto;
+  }
+}
+
+.sidebar-nav__logo {
+  padding: var(--space-sm) var(--space-md);
+  margin-bottom: var(--space-xl);
+}
+
+.sidebar-nav__logo-title {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.sidebar-nav__logo-sub {
+  font-size: var(--text-xs);
+  color: var(--c-text-dim);
+  margin-top: 2px;
+}
+
+.sidebar-nav__btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-md);
+  border-radius: var(--radius-md);
+  border: none;
+  background: transparent;
+  color: var(--c-text-dim);
+  font-family: inherit;
+  font-size: var(--text-base);
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: background 0.15s, color 0.15s;
+  min-height: var(--tap-min);
+}
+
+.sidebar-nav__btn:hover {
+  background: var(--c-card-hover);
+  color: var(--c-text);
+}
+
+.sidebar-nav__btn--active {
+  background: var(--c-accent-dim);
+  color: var(--c-accent);
+  font-weight: 600;
+}
+
+.sidebar-nav__btn-icon {
+  font-size: 18px;
+  width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.sidebar-nav__spacer {
+  flex: 1;
+}
+
+.sidebar-nav__divider {
+  height: 1px;
+  background: var(--c-border);
+  margin: var(--space-sm) 0;
+}
+
+/* ---------- Bottom nav (mobile/tablet only) ---------- */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: var(--app-max-width);
+  height: var(--bottom-nav-h);
+  background: var(--c-card);
+  border-top: 1px solid var(--c-border);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  z-index: var(--z-nav);
+}
+
+@media (min-width: 768px) {
+  .bottom-nav {
+    max-width: 900px;
+  }
+}
+
+/* Hide bottom nav on desktop */
+@media (min-width: 1024px) {
+  .bottom-nav {
+    display: none;
+  }
+}
+
+.bottom-nav__btn {
+  background: none;
+  border: none;
+  color: var(--c-text-dim);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-family: inherit;
+  min-width: var(--tap-min);
+  min-height: var(--tap-min);
+  justify-content: center;
+  padding: 4px 8px;
+}
+
+.bottom-nav__btn--accent {
+  color: var(--c-accent);
+}
+
+/* FAB (+) button in nav */
+.fab {
+  border-radius: 50%;
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  min-height: 52px;
+  margin-top: -20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  border: none;
+  cursor: pointer;
+}
+
+/* Sidebar FAB variant */
+.fab--sidebar {
+  border-radius: var(--radius-md);
+  width: 100%;
+  height: auto;
+  min-width: unset;
+  min-height: var(--tap-min);
+  margin-top: 0;
+  font-size: var(--text-base);
+  font-weight: 700;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+}
+
+/* ---------- Cards / sections ---------- */
+.card {
+  background: var(--c-card);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+}
+
+/* ---------- Account grid ---------- */
+.account-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+}
+
+/* Single-account → full width */
+.account-grid--single {
+  grid-template-columns: 1fr;
+}
+
+/* Tablet: keep 2 cols but wider */
+@media (min-width: 768px) {
+  .account-grid {
+    gap: var(--space-md);
+  }
+}
+
+/* Desktop: 3-4 column account grid */
+@media (min-width: 1024px) {
+  .account-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--space-lg);
+    margin-bottom: var(--space-2xl);
+  }
+
+  .account-grid--single {
+    grid-template-columns: minmax(200px, 360px);
+  }
+}
+
+/* ---------- Budget rows grid ---------- */
+@media (min-width: 1024px) {
+  .budget-rows-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+
+  .budget-rows-grid > * {
+    border-right: 1px solid var(--c-border);
+  }
+
+  .budget-rows-grid > *:nth-child(even) {
+    border-right: none;
+  }
+}
+
+/* ---------- Goals grid ---------- */
+@media (min-width: 768px) {
+  .goals-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-md);
+    margin-bottom: var(--space-md);
+  }
+}
+
+@media (min-width: 1024px) {
+  .goals-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-lg);
+  }
+}
+
+/* ---------- Dashboard two-column layout ---------- */
+@media (min-width: 1024px) {
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2xl);
+    align-items: start;
+  }
+
+  .dashboard-grid__full {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ---------- View padding ---------- */
+.view-pad {
+  padding: 0 var(--space-lg);
+}
+
+@media (min-width: 1024px) {
+  .view-pad {
+    padding: 0;
+  }
+}
+
+/* ---------- Modals ---------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex;
+  z-index: var(--z-modal);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* QuickAdd modal */
+.modal-card {
+  background: var(--c-card);
+  border: 1px solid var(--c-border);
+  width: 100%;
+  max-width: 420px;
+}
+
+/* Mobile: full screen bottom sheet */
+@media (max-width: 479px) {
+  .modal-overlay--center {
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal-card--quickadd {
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    padding: var(--space-2xl) var(--space-lg) calc(var(--space-2xl) + env(safe-area-inset-bottom, 0px));
+    max-height: 92dvh;
+    overflow-y: auto;
+  }
+}
+
+/* Tablet/Desktop: centered card */
+@media (min-width: 480px) {
+  .modal-overlay--center {
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-card--quickadd {
+    border-radius: var(--radius-lg);
+    padding: var(--space-2xl);
+    max-height: 90dvh;
+    overflow-y: auto;
+    max-width: 500px;
+  }
+}
+
+/* ChatPanel */
+.chat-panel {
+  background: var(--c-card);
+  border: 1px solid var(--c-border);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Mobile: full-width bottom sheet */
+@media (max-width: 767px) {
+  .modal-overlay--chat {
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .chat-panel {
+    width: 100%;
+    max-width: var(--app-max-width);
+    height: 75dvh;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+}
+
+/* Tablet/desktop: centered card */
+@media (min-width: 768px) {
+  .modal-overlay--chat {
+    align-items: center;
+    justify-content: center;
+  }
+  .chat-panel {
+    width: 100%;
+    max-width: 500px;
+    height: min(70vh, 600px);
+    border-radius: var(--radius-lg);
+  }
+}
+
+/* ---------- PIN screen ---------- */
+.pin-screen {
+  background: var(--c-bg);
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-body);
+  padding: var(--space-2xl) var(--space-lg);
+}
+
+.pin-inputs {
+  display: flex;
+  gap: clamp(8px, 2.5vw, 14px);
+  margin-bottom: var(--space-2xl);
+}
+
+.pin-input {
+  width: clamp(42px, 11vw, 54px);
+  height: clamp(50px, 13vw, 60px);
+  text-align: center;
+  font-size: clamp(20px, 5vw, 26px);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  border-radius: var(--radius-md);
+  outline: none;
+  caret-color: transparent;
+  transition: all 0.15s ease;
+}
+
+/* ---------- Form inputs / buttons touch targets ---------- */
+input, select, textarea {
+  min-height: var(--tap-min);
+  font-size: var(--text-base);
+}
+
+button {
+  min-height: var(--tap-min);
+  touch-action: manipulation;
+}
+
+/* Exception: tiny icon buttons & pill buttons don't need 44px */
+.btn-icon {
+  min-height: unset;
+  min-width: unset;
+}
+
+/* ---------- Typography helpers ---------- */
+.text-mono {
+  font-family: var(--font-mono);
+}
+
+/* ---------- Scrollable containers ---------- */
+.scroll-y {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ---------- Section label ---------- */
+.section-label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--c-text-dim);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+@media (min-width: 1024px) {
+  .section-label {
+    font-size: var(--text-base);
+    margin-bottom: 12px;
+  }
+}
+
+/* ---------- Utility ---------- */
+.full-width { width: 100%; }
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
