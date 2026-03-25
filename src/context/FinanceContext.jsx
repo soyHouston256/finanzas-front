@@ -4,6 +4,7 @@ import {
   fetchGoals,
   fetchTracking,
   fetchTransactions,
+  fetchTransactionPeriods,
   createTransaction as createTransactionRequest,
   updateAccount as updateAccountRequest,
 } from "../services/financeApi.js";
@@ -11,6 +12,7 @@ import { useAuth } from "./AuthContext.jsx";
 import { isIncomeCategory } from "../utils/constants.js";
 
 const FinanceContext = createContext(null);
+const TRANSACTIONS_PAGE_SIZE = 40;
 
 const EMPTY_TRACKING = {
   month: new Date().getMonth() + 1,
@@ -20,6 +22,18 @@ const EMPTY_TRACKING = {
   expected_income: 0,
   categories: {},
 };
+
+function getPeriodKey(year, month) {
+  return `${year}-${String(month).padStart(2, "0")}`;
+}
+
+function parsePeriodKey(periodKey) {
+  const [year, month] = String(periodKey || "").split("-").map(Number);
+  return {
+    year: Number.isFinite(year) ? year : EMPTY_TRACKING.year,
+    month: Number.isFinite(month) ? month : EMPTY_TRACKING.month,
+  };
+}
 
 function normalizeTransaction(tx) {
   return {
@@ -37,31 +51,39 @@ function sortTransactions(transactions) {
   });
 }
 
-function deriveTracking(transactions, existingTracking) {
+function mergePeriods(trackingRecords, transactionPeriods) {
+  const map = new Map();
+
+  trackingRecords.forEach((record) => {
+    const key = getPeriodKey(record.year, record.month);
+    map.set(key, { key, year: record.year, month: record.month });
+  });
+
+  transactionPeriods.forEach((period) => {
+    map.set(period.key, period);
+  });
+
+  return [...map.values()].sort((a, b) => {
+    if (b.year !== a.year) return b.year - a.year;
+    return b.month - a.month;
+  });
+}
+
+function deriveTracking(transactions, existingTracking, selectedPeriod) {
   if (existingTracking) {
     return existingTracking;
   }
 
+  const { month, year } = parsePeriodKey(selectedPeriod);
   if (!transactions.length) {
-    return EMPTY_TRACKING;
+    return {
+      ...EMPTY_TRACKING,
+      month,
+      year,
+    };
   }
 
-  const latestTxWithDate = transactions.find((tx) => tx?.date);
-  if (!latestTxWithDate) {
-    return EMPTY_TRACKING;
-  }
-
-  const latestDate = new Date(`${latestTxWithDate.date}T12:00:00`);
-  const month = latestDate.getMonth() + 1;
-  const year = latestDate.getFullYear();
-
-  const currentMonthTransactions = transactions.filter((tx) => {
-    if (!tx?.date || typeof tx.amount !== "number") return false;
-    const txDate = new Date(`${tx.date}T12:00:00`);
-    return txDate.getMonth() + 1 === month && txDate.getFullYear() === year;
-  });
-
-  const totals = currentMonthTransactions.reduce(
+  const totals = transactions.reduce(
     (acc, tx) => {
       if (isIncomeCategory(tx.category_slug)) {
         acc.total_income += tx.amount;
@@ -99,18 +121,28 @@ export function FinanceProvider({ children }) {
   const { unlocked, token } = useAuth();
   const [accounts, setAccounts] = useState([]);
   const [transactions, setTransactions] = useState([]);
+  const [transactionPeriods, setTransactionPeriods] = useState([]);
   const [goals, setGoals] = useState([]);
   const [trackingRecords, setTrackingRecords] = useState([]);
+  const [selectedPeriod, setSelectedPeriod] = useState("");
+  const [transactionsPage, setTransactionsPage] = useState(0);
+  const [transactionsHasMore, setTransactionsHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadingTransactions, setLoadingTransactions] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (!unlocked || !token) {
       setAccounts([]);
       setTransactions([]);
+      setTransactionPeriods([]);
       setGoals([]);
       setTrackingRecords([]);
+      setSelectedPeriod("");
+      setTransactionsPage(0);
+      setTransactionsHasMore(false);
       setLoading(false);
+      setLoadingTransactions(false);
       setError("");
       return undefined;
     }
@@ -121,19 +153,19 @@ export function FinanceProvider({ children }) {
       setLoading(true);
       setError("");
       try {
-        const [accountsData, transactionsData, trackingData, goalsData] = await Promise.all([
+        const [accountsData, trackingData, goalsData, periodsData] = await Promise.all([
           fetchAccounts(),
-          fetchTransactions(),
           fetchTracking(),
           fetchGoals(),
+          fetchTransactionPeriods(),
         ]);
 
         if (cancelled) return;
 
         setAccounts(accountsData || []);
-        setTransactions(sortTransactions((transactionsData || []).filter((tx) => typeof tx.amount === "number").map(normalizeTransaction)));
         setTrackingRecords(trackingData || []);
         setGoals(goalsData || []);
+        setTransactionPeriods(periodsData || []);
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : "No se pudo cargar la data financiera.");
@@ -152,15 +184,62 @@ export function FinanceProvider({ children }) {
     };
   }, [token, unlocked]);
 
-  const latestTracking = (() => {
-    if (!trackingRecords.length) return null;
-    return [...trackingRecords].sort((a, b) => {
-      if (b.year !== a.year) return b.year - a.year;
-      return b.month - a.month;
-    })[0];
-  })();
+  const availablePeriods = mergePeriods(trackingRecords, transactionPeriods);
 
-  const tracking = deriveTracking(transactions, latestTracking);
+  useEffect(() => {
+    if (!availablePeriods.length) return;
+    const hasSelectedPeriod = availablePeriods.some((period) => period.key === selectedPeriod);
+    if (!selectedPeriod || !hasSelectedPeriod) {
+      setSelectedPeriod(availablePeriods[0].key);
+    }
+  }, [availablePeriods, selectedPeriod]);
+
+  async function loadTransactionsPage(page, reset = false) {
+    if (!selectedPeriod || !token) return;
+
+    const { month, year } = parsePeriodKey(selectedPeriod);
+    setLoadingTransactions(true);
+
+    try {
+      const response = await fetchTransactions({
+        page,
+        limit: TRANSACTIONS_PAGE_SIZE,
+        month,
+        year,
+      });
+
+      const nextItems = sortTransactions((response.items || []).map(normalizeTransaction));
+      setTransactions((prev) => (reset ? nextItems : sortTransactions([...prev, ...nextItems])));
+      setTransactionsPage(response.page || page);
+      setTransactionsHasMore(Boolean(response.hasMore));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudieron cargar los movimientos.");
+    } finally {
+      setLoadingTransactions(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!unlocked || !token || !selectedPeriod) return;
+    setTransactions([]);
+    setTransactionsPage(0);
+    setTransactionsHasMore(false);
+    void loadTransactionsPage(1, true);
+  }, [selectedPeriod, token, unlocked]);
+
+  async function loadMoreTransactions() {
+    if (!transactionsHasMore || loadingTransactions) return;
+    await loadTransactionsPage(transactionsPage + 1);
+  }
+
+  const selectedPeriodParts = parsePeriodKey(selectedPeriod || availablePeriods[0]?.key);
+  const selectedTracking = trackingRecords.find(
+    (record) =>
+      record.year === selectedPeriodParts.year &&
+      record.month === selectedPeriodParts.month,
+  );
+
+  const tracking = deriveTracking(transactions, selectedTracking, selectedPeriod || availablePeriods[0]?.key);
 
   const accountMap = accounts.reduce((acc, account) => {
     acc[account._id] = {
@@ -179,16 +258,26 @@ export function FinanceProvider({ children }) {
 
     const amount = Number(payload.amount);
     const transactionType = payload.transaction_type || "expense";
-    const createdTransaction = await createTransactionRequest({
-      ...payload,
-      amount,
-      subcategory_slug: payload.subcategory_slug || "general",
-    });
+    const createdTransaction = normalizeTransaction(
+      await createTransactionRequest({
+        ...payload,
+        amount,
+        subcategory_slug: payload.subcategory_slug || "general",
+      }),
+    );
 
     const nextBalance = Number(account.balance) + getAccountDelta(account, amount, transactionType);
     const updatedAccount = await updateAccountRequest(account._id, { balance: nextBalance });
 
-    setTransactions((prev) => sortTransactions([normalizeTransaction(createdTransaction), ...prev]));
+    const createdPeriod = getPeriodKey(
+      new Date(`${createdTransaction.date}T12:00:00`).getFullYear(),
+      new Date(`${createdTransaction.date}T12:00:00`).getMonth() + 1,
+    );
+
+    if (createdPeriod === selectedPeriod) {
+      setTransactions((prev) => sortTransactions([createdTransaction, ...prev]));
+    }
+
     setAccounts((prev) => prev.map((item) => (item._id === updatedAccount._id ? updatedAccount : item)));
 
     return createdTransaction;
@@ -202,9 +291,15 @@ export function FinanceProvider({ children }) {
         tracking,
         transactions,
         goals,
+        availablePeriods,
+        selectedPeriod,
+        setSelectedPeriod,
+        transactionsHasMore,
         loading,
+        loadingTransactions,
         error,
         addTransaction,
+        loadMoreTransactions,
       }}
     >
       {children}

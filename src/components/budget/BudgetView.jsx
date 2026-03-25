@@ -5,14 +5,21 @@ import { useFinance } from "../../context/FinanceContext.jsx";
 import { useUI } from "../../context/UIContext.jsx";
 import ProgressRing from "../common/ProgressRing.jsx";
 import BudgetRow from "./BudgetRow.jsx";
-import TransactionRow from "../transactions/TransactionRow.jsx";
+import TransactionsFeed from "../transactions/TransactionsFeed.jsx";
 
 const today = new Date();
 const dayOfMonth = today.getDate();
-const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
 
 export default function BudgetView() {
-  const { tracking, transactions, loading, error } = useFinance();
+  const {
+    tracking,
+    transactions,
+    transactionsHasMore,
+    loading,
+    loadingTransactions,
+    loadMoreTransactions,
+    error,
+  } = useFinance();
   const { selectedCat, setSelectedCat } = useUI();
 
   const totalBudgeted = Object.values(tracking.categories || {}).reduce((s, c) => s + c.budgeted, 0);
@@ -20,8 +27,13 @@ export default function BudgetView() {
   const totalPct = totalBudgeted > 0 ? Math.round((totalSpent / totalBudgeted) * 100) : 0;
   const sortedCats = Object.entries(tracking.categories || {}).filter(([,d]) => d.budgeted > 0 || d.spent > 0).sort((a, b) => b[1].spent - a[1].spent);
   const filteredTx = selectedCat ? transactions.filter(t => t.category_slug === selectedCat) : transactions;
+  const daysInSelectedMonth = new Date(tracking.year, tracking.month, 0).getDate();
+  const isCurrentPeriod = tracking.year === today.getFullYear() && tracking.month === today.getMonth() + 1;
+  const periodHint = isCurrentPeriod
+    ? `Quedan ${daysInSelectedMonth - dayOfMonth} días`
+    : `${daysInSelectedMonth} días del periodo`;
 
-  if (loading) {
+  if (loading || (loadingTransactions && transactions.length === 0 && Object.keys(tracking.categories || {}).length === 0)) {
     return <div className="view-pad" style={{ color: C.textDim }}>Cargando presupuesto...</div>;
   }
 
@@ -37,7 +49,7 @@ export default function BudgetView() {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: "var(--text-xs)", color: C.textDim, textTransform: "uppercase", letterSpacing: 1 }}>Gastado del Total</div>
           <div style={{ fontSize: "var(--text-xl)", fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>{totalPct}%</div>
-          <div style={{ fontSize: "var(--text-sm)", color: C.textDim }}>{fmt(totalSpent)} de {fmt(totalBudgeted)} · Quedan {daysInMonth - dayOfMonth} días</div>
+          <div style={{ fontSize: "var(--text-sm)", color: C.textDim }}>{fmt(totalSpent)} de {fmt(totalBudgeted)} · {periodHint}</div>
         </div>
       </div>
 
@@ -62,9 +74,13 @@ export default function BudgetView() {
         <div style={{ marginTop: 16 }}>
           <div className="section-label">{getCategoryIcon(selectedCat)} {getCategoryName(selectedCat)}</div>
           <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "4px 12px" }}>
-            {filteredTx.length > 0
-              ? filteredTx.map((tx) => <TransactionRow key={tx._id || `${tx.date}-${tx.description}`} tx={tx} />)
-              : <div style={{ padding: 16, textAlign: "center", color: C.textDim, fontSize: "var(--text-sm)" }}>Sin movimientos</div>}
+            <TransactionsFeed
+              transactions={filteredTx}
+              hasMore={transactionsHasMore}
+              loadingMore={loadingTransactions}
+              onLoadMore={loadMoreTransactions}
+              emptyText="Sin movimientos"
+            />
           </div>
         </div>
       )}

@@ -8,18 +8,21 @@ import TransactionRow from "../transactions/TransactionRow.jsx";
 
 const today = new Date();
 const dayOfMonth = today.getDate();
-const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
 
 export default function DashboardView() {
-  const { accounts, tracking, transactions, loading, error } = useFinance();
+  const { accounts, tracking, transactions, loading, loadingTransactions, error } = useFinance();
 
   const penAccounts = accounts.filter(a => a.currency === "PEN");
   const usdAccounts = accounts.filter(a => a.currency === "USD");
   const netPEN = penAccounts.reduce((s, a) => s + (a.type === "credit_card" ? -a.balance : a.balance), 0);
   const netUSD = usdAccounts.reduce((s, a) => s + (a.type === "credit_card" ? -a.balance : a.balance), 0);
   const sortedCats = Object.entries(tracking.categories || {}).filter(([,d]) => d.budgeted > 0 || d.spent > 0).sort((a, b) => b[1].spent - a[1].spent);
+  const isCurrentPeriod = tracking.year === today.getFullYear() && tracking.month === today.getMonth() + 1;
+  const periodHint = isCurrentPeriod
+    ? `Faltan ${Math.max(28 - dayOfMonth, 0)} días`
+    : "Periodo histórico seleccionado";
 
-  if (loading) {
+  if (loading || (loadingTransactions && transactions.length === 0)) {
     return <div className="view-pad" style={{ color: C.textDim }}>Cargando datos...</div>;
   }
 
@@ -39,7 +42,7 @@ export default function DashboardView() {
             <div style={{ fontSize: "var(--text-xs)", color: C.textDim, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 4 }}>Patrimonio Neto</div>
             <div style={{ fontSize: "var(--text-3xl)", fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: netPEN >= 0 ? C.accent : C.red }}>{netPEN < 0 ? "-" : ""}{fmt(Math.abs(netPEN))}</div>
             {netUSD !== 0 && <div style={{ fontSize: "var(--text-base)", color: C.blue, fontFamily: "'JetBrains Mono', monospace", marginTop: 4 }}>+ {fmt(netUSD, "USD")}</div>}
-            <div style={{ fontSize: "var(--text-xs)", color: C.textDim, marginTop: 8 }}>Ingresos del periodo: {fmt(tracking.expected_income || tracking.total_income)} · Faltan {Math.max(28 - dayOfMonth, 0)} días</div>
+            <div style={{ fontSize: "var(--text-xs)", color: C.textDim, marginTop: 8 }}>Ingresos del periodo: {fmt(tracking.expected_income || tracking.total_income)} · {periodHint}</div>
           </div>
 
           {/* PEN accounts */}

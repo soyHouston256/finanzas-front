@@ -15,15 +15,25 @@ import SidebarNav from "./components/common/SidebarNav.jsx";
 
 const today = new Date();
 const dayOfMonth = today.getDate();
-const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-const monthProgress = Math.round((dayOfMonth / daysInMonth) * 100);
+const monthProgress = Math.round((dayOfMonth / new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate()) * 100);
 
 function AppShell() {
   const { unlocked, lock } = useAuth();
-  const { tracking } = useFinance();
+  const { tracking, availablePeriods, selectedPeriod, setSelectedPeriod } = useFinance();
   const { view, setView, showAdd, showChat, setShowChat, setSelectedCat, theme, toggleTheme } = useUI();
   const monthLabel = new Date(tracking.year || today.getFullYear(), (tracking.month || today.getMonth() + 1) - 1, 1)
     .toLocaleDateString("es-PE", { month: "long", year: "numeric" });
+  const isCurrentPeriod =
+    tracking.year === today.getFullYear() &&
+    tracking.month === today.getMonth() + 1;
+  const currentPeriodDays = new Date(
+    tracking.year || today.getFullYear(),
+    tracking.month || today.getMonth() + 1,
+    0,
+  ).getDate();
+  const currentDayLabel = isCurrentPeriod
+    ? `Día ${dayOfMonth}/${currentPeriodDays} (${monthProgress}%)`
+    : `${currentPeriodDays} días cerrados`;
 
   const onLock = useCallback(() => {
     lock();
@@ -51,9 +61,35 @@ function AppShell() {
       <div className="app-header">
         <div>
           <div style={{ fontSize: "clamp(18px, 5vw, 22px)", fontWeight: 700, letterSpacing: -0.5 }}>🐾 Fang</div>
-          <div style={{ fontSize: "var(--text-xs)", color: C.textDim, marginTop: 2 }}>{monthLabel} · Día {dayOfMonth}/{daysInMonth} ({monthProgress}%)</div>
+          <div style={{ fontSize: "var(--text-xs)", color: C.textDim, marginTop: 2 }}>{monthLabel} · {currentDayLabel}</div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <select
+            value={selectedPeriod}
+            onChange={(event) => {
+              setSelectedCat(null);
+              setSelectedPeriod(event.target.value);
+            }}
+            style={{
+              background: C.card,
+              border: `1px solid ${C.border}`,
+              borderRadius: 8,
+              padding: "8px 10px",
+              color: C.text,
+              fontSize: "var(--text-sm)",
+              fontFamily: "inherit",
+              maxWidth: 180,
+            }}
+          >
+            {availablePeriods.map((period) => (
+              <option key={period.key} value={period.key}>
+                {new Date(period.year, period.month - 1, 1).toLocaleDateString("es-PE", {
+                  month: "long",
+                  year: "numeric",
+                })}
+              </option>
+            ))}
+          </select>
           <button onClick={onLock} title="Bloquear" className="btn-icon" style={{ background: "none", border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 8px", color: C.textDim, cursor: "pointer", fontSize: 14, lineHeight: 1 }}>🔒</button>
         </div>
       </div>

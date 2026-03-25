@@ -64,8 +64,19 @@ export function fetchAccounts() {
   return apiFetch("/accounts");
 }
 
-export function fetchTransactions() {
-  return apiFetch("/transactions");
+export function fetchTransactions(params = {}) {
+  const searchParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      searchParams.set(key, String(value));
+    }
+  });
+  const query = searchParams.toString();
+  return apiFetch(`/transactions${query ? `?${query}` : ""}`);
+}
+
+export function fetchTransactionPeriods() {
+  return apiFetch("/transactions/periods");
 }
 
 export function fetchTracking() {
